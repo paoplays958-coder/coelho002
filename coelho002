@@ -1,0 +1,155 @@
+-- Dragon Hub 0.3 - Cross-Platform Version
+-- Update: 2025-10-17 05:44:36 UTC
+-- Owner: paoplays958-coder
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+local isMobile = UIS.TouchEnabled
+
+-- Configurações
+local DISCORD_LINK = "https://discord.gg/pVsWE7WszB"
+local flyEnabled, speedEnabled, jumpEnabled = false, false, false
+local speedVal, jumpVal, flySpeed = 16, 50, 50
+local bv, bg, flyConn
+
+-- UI Principal
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local main = Instance.new("Frame", gui)
+main.Size = isMobile and UDim2.new(0.8, 0, 0.6, 0) or UDim2.new(0, 350, 0, 400)
+main.Position = UDim2.new(0.5, -175, 0.5, -200)
+main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 8)
+
+-- Containers
+local tabs = Instance.new("Frame", main)
+tabs.Size = UDim2.new(0, 80, 1, -60)
+tabs.Position = UDim2.new(0, 10, 0, 60)
+tabs.BackgroundTransparency = 1
+
+local content = Instance.new("Frame", main)
+content.Size = UDim2.new(1, -100, 1, -70)
+content.Position = UDim2.new(0, 90, 0, 60)
+content.BackgroundTransparency = 1
+
+-- Função para criar botões
+local function createButton(parent, text, pos, color)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(0.8, 0, 0, isMobile and 50 or 40)
+    btn.Position = pos
+    btn.BackgroundColor3 = color or Color3.fromRGB(45, 45, 45)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = isMobile and 20 or 14
+    btn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
+end
+
+-- Aba Home/Menu
+local homeFrame = Instance.new("Frame", content)
+homeFrame.Size = UDim2.new(1, 0, 1, 0)
+homeFrame.BackgroundTransparency = 1
+homeFrame.Visible = true
+
+local versionLabel = Instance.new("TextLabel", homeFrame)
+versionLabel.Size = UDim2.new(1, 0, 0, 30)
+versionLabel.Position = UDim2.new(0, 0, 0.1, 0)
+versionLabel.BackgroundTransparency = 1
+versionLabel.Text = "Dragon Hub v0.2"
+versionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+versionLabel.TextSize = isMobile and 24 or 18
+
+local discordBtn = createButton(homeFrame, "Join Discord", UDim2.new(0.1, 0, 0.3, 0), Color3.fromRGB(88, 101, 242))
+discordBtn.MouseButton1Click:Connect(function()
+    setclipboard(DISCORD_LINK)
+    discordBtn.Text = "Link Copied!"
+    task.wait(1)
+    discordBtn.Text = "Join Discord"
+end)
+
+-- Botões de funcionalidades
+local flyBtn = createButton(content, "Fly", UDim2.new(0.1, 0, 0.2, 0))
+local speedBtn = createButton(content, "Speed", UDim2.new(0.1, 0, 0.35, 0))
+local jumpBtn = createButton(content, "Jump", UDim2.new(0.1, 0, 0.5, 0))
+local tpBtn = createButton(content, "Click TP", UDim2.new(0.1, 0, 0.65, 0))
+
+-- Função Fly
+local function toggleFly()
+    flyEnabled = not flyEnabled
+    
+    if flyEnabled then
+        bg = Instance.new("BodyGyro", root)
+        bg.P = 9e4
+        bv = Instance.new("BodyVelocity", root)
+        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        
+        flyConn = RunService.Heartbeat:Connect(function()
+            local cam = workspace.CurrentCamera
+            local moveDir = Vector3.new(
+                UIS:IsKeyDown(Enum.KeyCode.D) and 1 or UIS:IsKeyDown(Enum.KeyCode.A) and -1 or 0,
+                UIS:IsKeyDown(Enum.KeyCode.Space) and 1 or UIS:IsKeyDown(Enum.KeyCode.LeftShift) and -1 or 0,
+                UIS:IsKeyDown(Enum.KeyCode.S) and 1 or UIS:IsKeyDown(Enum.KeyCode.W) and -1 or 0
+            )
+            bv.Velocity = cam.CFrame:VectorToWorldSpace(moveDir * flySpeed)
+            bg.CFrame = cam.CFrame
+        end)
+        flyBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    else
+        if flyConn then flyConn:Disconnect() end
+        if bv then bv:Destroy() end
+        if bg then bg:Destroy() end
+        flyBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    end
+end
+
+-- Event Connections
+flyBtn.MouseButton1Click:Connect(toggleFly)
+
+speedBtn.MouseButton1Click:Connect(function()
+    speedEnabled = not speedEnabled
+    char.Humanoid.WalkSpeed = speedEnabled and speedVal or 16
+    speedBtn.BackgroundColor3 = speedEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(45, 45, 45)
+end)
+
+jumpBtn.MouseButton1Click:Connect(function()
+    jumpEnabled = not jumpEnabled
+    char.Humanoid.JumpPower = jumpEnabled and jumpVal or 50
+    jumpBtn.BackgroundColor3 = jumpEnabled and Color3.fromRGB(50, 50, 255) or Color3.fromRGB(45, 45, 45)
+end)
+
+tpBtn.MouseButton1Click:Connect(function()
+    local tool = Instance.new("Tool")
+    tool.Name = "Click TP"
+    tool.RequiresHandle = true
+    
+    local handle = Instance.new("Part")
+    handle.Name = "Handle"
+    handle.Size = Vector3.new(1, 1, 2)
+    handle.Parent = tool
+    
+    tool.Activated:Connect(function()
+        local mouse = player:GetMouse()
+        if char and root then
+            root.CFrame = CFrame.new(mouse.Hit.Position) + Vector3.new(0, 3, 0)
+        end
+    end)
+    
+    tool.Parent = player.Backpack
+end)
+
+-- Título
+local title = Instance.new("TextLabel", main)
+title.Text = "Dragon Hub"
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextSize = isMobile and 24 or 16
+title.Font = Enum.Font.GothamBold
+Instance.new("UICorner", title).CornerRadius = UDim.new(0, 8)
